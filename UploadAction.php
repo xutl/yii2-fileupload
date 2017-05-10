@@ -36,7 +36,7 @@ class UploadAction extends Action
     /**
      * @var string Validator name
      */
-    public $uploadOnlyImage = true;
+    public $onlyImage = true;
 
     /**
      * @var bool 是否允许批量上传
@@ -66,7 +66,7 @@ class UploadAction extends Action
         if ($this->multiple) {
             $this->_config['maxFiles'] = (int)(ini_get('max_file_uploads'));
         }
-        if ($this->uploadOnlyImage !== true) {
+        if ($this->onlyImage !== true) {
             $this->_config['extensions'] = $this->getModule()->fileAllowFiles;
         } else {
             $this->_config['extensions'] = $this->getModule()->imageAllowFiles;
@@ -74,7 +74,6 @@ class UploadAction extends Action
             $this->_config['mimeTypes'] = 'image/*';
         }
     }
-
 
     /**
      * @inheritdoc
@@ -129,7 +128,7 @@ class UploadAction extends Action
                 'type' => $file->type,
                 'size' => $file->size
             ];
-            if ($this->uploadOnlyImage !== true) {
+            if ($this->onlyImage !== true) {
                 $result['filename'] = $result['name'];
             }
 

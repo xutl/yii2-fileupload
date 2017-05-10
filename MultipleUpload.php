@@ -20,7 +20,7 @@ use yii\widgets\InputWidget;
  * Class FileUpload
  * @package xutl\fileupload
  */
-class FileUpload extends InputWidget
+class MultipleUpload extends InputWidget
 {
     /**
      * @var bool 是否只允许上传图片
@@ -40,7 +40,7 @@ class FileUpload extends InputWidget
     /**
      * @var array 上传url地址
      */
-    public $url = ['/attachment/upload/file-upload'];
+    public $url = [];
 
     /**
      *  这里为了配合后台方便处理所有都是设为true,文件上传数目请控制好 $maxNumberOfFiles
@@ -58,23 +58,19 @@ class FileUpload extends InputWidget
      *
      * @var int 允许上传的最大文件数目
      */
-    public $maxNumberOfFiles = 50;
+    public $maxNumberOfFiles;
 
     /**
-     *
      * @var int 允许上传文件最大限制
      */
     public $maxFileSize;
 
     /**
-     *
      * @var string 允许上传的附件类型
      */
     public $acceptFileTypes;
 
-    public $deleteUrl = ["/upload/delete"];
-
-    public $fileInputName;
+    private $fileInputName;
 
     /**
      *
@@ -86,13 +82,18 @@ class FileUpload extends InputWidget
         if (!isset ($this->options ['id'])) {
             $this->options ['id'] = $this->getId();
         }
-
+        if (empty($this->maxFileSize)) {
+            $this->maxFileSize = ini_get('upload_max_filesize') ?: '2M';
+        }
+        if (empty($this->maxNumberOfFiles)) {
+            $this->maxNumberOfFiles = (int)ini_get('max_file_uploads') ?: 50;
+        }
         if (empty($this->url)) {
             if ($this->onlyImage === false) {
-                //$this->url = $this->multiple ? ['/attachment/upload/files-upload'] : ['/attachment/upload/file-upload'];
+                $this->url = $this->multiple ? ['/attachment/upload/files-upload'] : ['/attachment/upload/file-upload'];
 //                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp, application/x-zip-compressed';
             } else {
-                //$this->url = $this->multiple ? ['/attachment/upload/images-upload'] : ['/attachment/upload/image-upload'];
+                $this->url = $this->multiple ? ['/attachment/upload/images-upload'] : ['/attachment/upload/image-upload'];
 //                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp';
             }
         }
