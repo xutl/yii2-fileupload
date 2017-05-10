@@ -4,6 +4,7 @@
  * @copyright Copyright (c) 2012 TintSoft Technology Co. Ltd.
  * @license http://www.tintsoft.com/license/
  */
+
 namespace xutl\fileupload;
 
 use Yii;
@@ -13,8 +14,11 @@ use yii\base\Exception;
 use yii\helpers\FileHelper;
 use yii\helpers\Url;
 use yii\web\BadRequestHttpException;
+use yii\helpers\Html;
 use yii\web\Response;
 use yii\web\UploadedFile;
+use yuncms\attachment\ModuleTrait;
+use yuncms\attachment\components\Uploader;
 
 /**
  * Class UploadAction
@@ -22,14 +26,12 @@ use yii\web\UploadedFile;
  */
 class UploadAction extends Action
 {
-    public $basePath = '@webroot/upload';
-
-    public $baseUrl = '@web/upload';
+    use ModuleTrait;
 
     /**
-     * @var string Path to directory where files will be uploaded
+     * @var string file input name.
      */
-    public $path = '';
+    public $uploadParam = 'file';
 
     /**
      * @var string Validator name
@@ -37,48 +39,42 @@ class UploadAction extends Action
     public $uploadOnlyImage = true;
 
     /**
-     * @var string Variable's name that Imperavi Redactor sent upon image/file upload.
+     * @var bool 是否允许批量上传
      */
-    public $uploadParam = 'file';
+    public $multiple = false;
 
     /**
      * @var string 参数指定文件名
      */
-    public $uploadQueryParam = 'fileparam';
+    public $uploadQueryParam = 'file_param';
 
-
-    public $multiple = false;
-
-    /**
-     * @var array Model validator options
-     */
-    public $validatorOptions = [];
-
-    /**
-     * @var string Model validator name
-     */
-    private $_validator = 'image';
-
-    public $deleteUrl = ['/upload/delete'];
-
-    public $callback;
-
-    public $itemCallback;
+    private $_config = [];
 
     /**
      * @inheritdoc
      */
     public function init()
     {
+        parent::init();
+        $this->controller->enableCsrfValidation = false;
+
         if (Yii::$app->request->get($this->uploadQueryParam)) {
             $this->uploadParam = Yii::$app->request->get($this->uploadQueryParam);
         }
-        if ($this->uploadOnlyImage !== true) {
-            $this->_validator = 'file';
+
+        $this->_config['maxSize'] = $this->getModule()->getMaxUploadByte();
+        if ($this->multiple) {
+            $this->_config['maxFiles'] = (int)(ini_get('max_file_uploads'));
         }
-        $this->basePath = Yii::getAlias($this->basePath);
-        $this->baseUrl = Yii::getAlias($this->baseUrl);
+        if ($this->uploadOnlyImage !== true) {
+            $this->_config['extensions'] = $this->getModule()->fileAllowFiles;
+        } else {
+            $this->_config['extensions'] = $this->getModule()->imageAllowFiles;
+            $this->_config['checkExtensionByMimeType'] = true;
+            $this->_config['mimeTypes'] = 'image/*';
+        }
     }
+
 
     /**
      * @inheritdoc
@@ -88,64 +84,55 @@ class UploadAction extends Action
         Yii::$app->response->format = Response::FORMAT_JSON;
         if (Yii::$app->request->isPost) {
             $files = UploadedFile::getInstancesByName($this->uploadParam);
-//            p($files);
             if (!$this->multiple) {
                 $res = [$this->uploadOne($files[0])];
             } else {
                 $res = $this->uploadMore($files);
             }
-            $result = [
-                'files' => $res
-            ];
-            if ($this->callback instanceof \Closure) {
-                $result = call_user_func($this->callback, $result);
-            }
-            return $result;
+            return ['files' => $res];
         } else {
             throw new BadRequestHttpException('Only POST is allowed');
         }
-
     }
-    private function uploadMore(array $files) {
+
+    /**
+     * 批量上传
+     * @param array $files
+     * @return array
+     */
+    private function uploadMore(array $files)
+    {
         $res = [];
         foreach ($files as $file) {
-
             $result = $this->uploadOne($file);
             $res[] = $result;
         }
         return $res;
     }
+
+    /**
+     * 单文件上传
+     * @param UploadedFile $file
+     * @return array|mixed
+     */
     private function uploadOne(UploadedFile $file)
     {
         try {
-            $model = new DynamicModel(compact('file'));
-            $model->addRule('file', $this->_validator, $this->validatorOptions)->validate();
+            $uploader = new Uploader(['config' => $this->_config]);
+            $uploader->up($file);
+            $fileInfo = $uploader->getFileInfo();
+            $result = [
+                'name' => Html::encode($file->name),
+                'url' => $fileInfo['url'],
+                'path' => $fileInfo['url'],
+                'extension' => $file->extension,
+                'type' => $file->type,
+                'size' => $file->size
+            ];
+            if ($this->uploadOnlyImage !== true) {
+                $result['filename'] = $result['name'];
+            }
 
-            if ($model->hasErrors()) {
-                throw new Exception($model->getFirstError('file'));
-            } else {
-                $fileName = ltrim($this->path . '/' . $file->name, '/');
-                $filePath = ltrim($this->basePath . '/' . $this->path, '/');
-                $fileFullPath = ltrim($this->basePath . '/' . $fileName, '/');
-                if (!is_dir($filePath)) {
-                    FileHelper::createDirectory($filePath);
-                }
-                $file->saveAs($fileFullPath);
-                $result = [
-                    'name' => $file->name,
-                    'url' => $this->baseUrl . '/' . $fileName,
-                    'path' => $fileName,
-                    'extension' => $file->extension,
-                    'type' => $file->type,
-                    'size' => $file->size
-                ];
-                if ($this->uploadOnlyImage !== true) {
-                    $result['filename'] = $file->name;
-                }
-            }
-            if ($this->itemCallback instanceof \Closure) {
-                $result = call_user_func($this->itemCallback, $result);
-            }
         } catch (Exception $e) {
             $result = [
                 'error' => $e->getMessage()
