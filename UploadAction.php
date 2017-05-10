@@ -4,7 +4,7 @@
  * @copyright Copyright (c) 2012 TintSoft Technology Co. Ltd.
  * @license http://www.tintsoft.com/license/
  */
-namespace xutl\fileupload\actions;
+namespace xutl\fileupload;
 
 use Yii;
 use yii\base\Action;
