@@ -7,14 +7,13 @@
 namespace xutl\fileupload;
 
 use Yii;
-use yii\web\View;
-use yii\helpers\Url;
 use yii\helpers\Html;
 use yii\helpers\Json;
-use yii\web\JsExpression;
+use yii\helpers\Url;
+use yii\jui\JuiAsset;
+use yii\base\Arrayable;
 use yii\helpers\ArrayHelper;
 use yii\widgets\InputWidget;
-use yii\base\InvalidConfigException;
 
 /**
  * Class FileUpload
@@ -22,58 +21,161 @@ use yii\base\InvalidConfigException;
  */
 class FileUpload extends InputWidget
 {
-    public $serverUrl = ['/attachment/upload/upload'];
-    public $buttonTitle = '选择文件';
-    public $labelClass = 'btn btn-default btn-upload';
-    public $icon = '<span class="fa fa-upload"></span>';
-    public $formData = [];
-
-    /** @var JsExpression */
-    public $done = null;
+    /**
+     * @var bool
+     */
+    public $onlyImage = true;
 
     /**
-     * @throws InvalidConfigException
+     * @var array
+     */
+    public $wrapperOptions;
+
+    /**
+     *
+     * @var array
+     */
+    public $clientOptions = [];
+
+    /**
+     *
+     * @var array 上传url地址
+     */
+    public $url = [];
+
+    /**
+     *  这里为了配合后台方便处理所有都是设为true,文件上传数目请控制好 $maxNumberOfFiles
+     * @var bool
+     */
+    public $multiple = true;
+
+    /**
+     *
+     * @var bool
+     */
+    public $sortable = false;
+
+    /**
+     *
+     * @var int 允许上传的最大文件数目
+     */
+    public $maxNumberOfFiles = 50;
+
+    /**
+     *
+     * @var int 允许上传文件最大限制
+     */
+    public $maxFileSize;
+
+    /**
+     *
+     * @var string 允许上传的附件类型
+     */
+    public $acceptFileTypes;
+
+    public $deleteUrl = ["/upload/delete"];
+
+    public $fileInputName;
+
+    /**
+     *
+     * @throws \yii\base\InvalidConfigException
      */
     public function init()
     {
         parent::init();
-        if ($this->done === null) {
-            $this->done = new JsExpression('function (e, data) {}');
+        if (empty($this->url)) {
+            if ($this->onlyImage === false) {
+                $this->url = $this->multiple ? ['/upload/files-upload'] : ['/upload/file-upload'];
+//                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp, application/x-zip-compressed';
+            } else {
+                $this->url = $this->multiple ? ['/upload/images-upload'] : ['/upload/image-upload'];
+//                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp';
+            }
         }
+        if ($this->hasModel()) {
+            $this->name = $this->name ? : Html::getInputName($this->model, $this->attribute);
+            $this->attribute = Html::getAttributeName($this->attribute);
+            $value = $this->model->{$this->attribute};
+            $attachments = $this->multiple == true ? $value :[$value];
+            $this->value = [];
+            if ($attachments) {
+                foreach ($attachments as $attachment) {
+                    $value = $this->formatAttachment($attachment);
+                    if ($value) {
+                        $this->value[] = $value;
+                    }
+                }
+            }
+
+        }
+        $this->fileInputName = md5($this->name);
+        if (! array_key_exists('fileparam', $this->url)) {
+            $this->url['fileparam'] = $this->fileInputName;//服务器需要通过这个判断是哪一个input name上传的
+        }
+
+        $this->clientOptions = ArrayHelper::merge($this->clientOptions, [
+            'id' => $this->options['id'],
+            'name'=> $this->name, //主要用于上传后返回的项目name
+            'url' => Url::to($this->url),
+            'multiple' => $this->multiple,
+            'sortable' => $this->sortable,
+            'maxNumberOfFiles' => $this->maxNumberOfFiles,
+            'maxFileSize' => $this->maxFileSize,
+            'acceptFileTypes' => $this->acceptFileTypes,
+            'files' => $this->value?:[]
+        ]);
+
+
     }
 
+    protected function formatAttachment($attachment)
+    {
+        if (!empty($attachment) && is_string($attachment)) {
+            return [
+                'url' => $attachment,
+                'path' => $attachment,
+            ];
+        } else if (is_array($attachment)) {
+            return $attachment;
+        } else if ($attachment instanceof Arrayable)
+            return $attachment->toArray();
+        return [];
+    }
+
+
+
     /**
+     *
      * @return string
      */
     public function run()
     {
         $this->registerClientScript();
-        if (isset($this->options['class'])) {
-            $this->options['class'] .= ' sr-only';
-        } else {
-            $this->options['class'] = 'sr-only';
-        }
-        if ($this->hasModel()) {
-            //$this->options['name'] = $this->name;
-            $input = Html::activeFileInput($this->model, $this->attribute, ArrayHelper::merge($this->options, [
-                'data-url' => Url::to($this->serverUrl)
-            ]));
-        } else {
-            $input = Html::fileInput($this->name, null, ArrayHelper::merge($this->options, [
-                'data-url' => Url::to($this->serverUrl)
-            ]));
-        }
-        return Html::label($input . $this->icon . ' ' . $this->buttonTitle, $this->options['id'], [
-            'class' => $this->labelClass,
-            'title' => $this->buttonTitle,
+        $content = Html::hiddenInput($this->name . ($this->multiple ? '[]' : ''), null, $this->options);
+        $content .= Html::beginTag('div',$this->wrapperOptions);
+        $content .= Html::fileInput($this->fileInputName, null, [
+            'id' => $this->fileInputName,
+            'multiple' => $this->multiple,
+            'accept' => $this->acceptFileTypes
         ]);
+        $content .= Html::endTag('div');
+        return $content;
     }
 
-    protected function registerClientScript()
+    /**
+     * Registers required script for the plugin to work as jQuery File Uploader
+     */
+    public function registerClientScript()
     {
-        $formDate = Json::encode($this->formData, 336);
-        FileUploadAsset::register($this->view);
-        $script = "jQuery('#{$this->options['id']}').fileupload({ dataType: 'json',formData: {$formDate},done: {$this->done}});";
-        $this->view->registerJs($script, View::POS_READY);
+        Html::addCssClass($this->wrapperOptions, "upload-kit");
+
+        AttachmentUploadAsset::register($this->getView());
+
+        if ($this->sortable) {
+            JuiAsset::register($this->getView());
+        }
+        $options = Json::encode($this->clientOptions);
+        $this->getView()->registerJs("jQuery('#{$this->fileInputName}').attachmentUpload({$options});");
     }
 }
