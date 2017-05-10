@@ -107,7 +107,6 @@ class FileUpload extends InputWidget
                     }
                 }
             }
-
         }
         $this->fileInputName = md5($this->name);
         if (! array_key_exists('fileparam', $this->url)) {
@@ -142,8 +141,6 @@ class FileUpload extends InputWidget
             return $attachment->toArray();
         return [];
     }
-
-
 
     /**
      *
