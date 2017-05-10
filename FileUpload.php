@@ -86,10 +86,10 @@ class FileUpload extends InputWidget
         parent::init();
         if (empty($this->url)) {
             if ($this->onlyImage === false) {
-                $this->url = $this->multiple ? ['/upload/files-upload'] : ['/upload/file-upload'];
+                $this->url = $this->multiple ? ['/attachment/upload/files-upload'] : ['/attachment/upload/file-upload'];
 //                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp, application/x-zip-compressed';
             } else {
-                $this->url = $this->multiple ? ['/upload/images-upload'] : ['/upload/image-upload'];
+                $this->url = $this->multiple ? ['/attachment/upload/images-upload'] : ['/attachment/upload/image-upload'];
 //                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp';
             }
         }

@@ -5,8 +5,7 @@
   margin: 0;
 }
 
-.upload-kit .upload-kit-input,
-.upload-kit .upload-kit-item {
+.upload-kit .upload-kit-input{
   position: relative;
   color: #999999;
   border: 2px dashed #999999;
@@ -21,6 +20,22 @@
   width:150px;
   height:150px;
 }
+
+.upload-kit .upload-kit-item {
+  position: relative;
+  color: #999999;
+  border: 2px dashed #999999;
+  border-radius: 7px;
+  float: left;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  background-size: cover;
+  background-position: center center;
+  background-origin: border-box;
+  list-style: none;
+  height:150px;
+}
+
 .upload-kit .upload-kit-input .progress,
 .upload-kit .upload-kit-item .progress,
 .upload-kit .upload-kit-input .add,
