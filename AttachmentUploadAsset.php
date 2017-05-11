@@ -24,6 +24,6 @@ class AttachmentUploadAsset extends AssetBundle
     public $depends = [
         'yii\web\JqueryAsset',
         'yii\bootstrap\BootstrapAsset',
-        'xutl\fileupload\FileuploadAsset'
+        'xutl\fileupload\FileUploadAsset'
     ];
 }
