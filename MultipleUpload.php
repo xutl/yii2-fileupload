@@ -43,7 +43,7 @@ class MultipleUpload extends InputWidget
     public $url = [];
 
     /**
-     *  这里为了配合后台方便处理所有都是设为true,文件上传数目请控制好 $maxNumberOfFiles
+     * 这里为了配合后台方便处理所有都是设为true,文件上传数目请控制好 $maxNumberOfFiles
      * @var bool 是否允许多文件上传
      */
     public $multiple = true;
@@ -94,7 +94,7 @@ class MultipleUpload extends InputWidget
 //                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp, application/x-zip-compressed';
             } else {
                 $this->url = $this->multiple ? ['/attachment/upload/images-upload'] : ['/attachment/upload/image-upload'];
-//                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp';
+                $this->acceptFileTypes = 'image/*';
             }
         }
         if ($this->hasModel()) {
