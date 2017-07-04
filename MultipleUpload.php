@@ -15,6 +15,7 @@ use yii\jui\JuiAsset;
 use yii\base\Arrayable;
 use yii\helpers\ArrayHelper;
 use yii\widgets\InputWidget;
+use yuncms\attachment\ModuleTrait;
 
 /**
  * Class FileUpload
@@ -22,6 +23,7 @@ use yii\widgets\InputWidget;
  */
 class MultipleUpload extends InputWidget
 {
+    use ModuleTrait;
     /**
      * @var bool 是否只允许上传图片
      */
@@ -91,11 +93,21 @@ class MultipleUpload extends InputWidget
         if (empty($this->url)) {
             if ($this->onlyImage === false) {
                 $this->url = $this->multiple ? ['/attachment/upload/files-upload'] : ['/attachment/upload/file-upload'];
-//                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp, application/x-zip-compressed';
+                $fileAllowFiles = $this->getModule()->fileAllowFiles;
+                $regExp = '/(\.|\/)(';
+                $extensions = explode(',', $fileAllowFiles);
+                foreach ($extensions as $extension) {
+                    $regExp .= $extension . '|';
+                }
+                $regExp .= 'xyz)$/i';
+
+               // $this->acceptFileTypes = 'application/*, text/*';
+                $this->clientOptions['acceptFileTypes'] = new \yii\web\JsExpression($regExp);
             } else {
                 $this->url = $this->multiple ? ['/attachment/upload/images-upload'] : ['/attachment/upload/image-upload'];
                 //$this->acceptFileTypes = 'image/*';
                 $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif';
+                $this->clientOptions['acceptFileTypes'] = new \yii\web\JsExpression('/(\.|\/)(gif|jpe?g|png)$/i');
             }
         }
         if ($this->hasModel()) {
@@ -128,13 +140,13 @@ class MultipleUpload extends InputWidget
             'sortable' => $this->sortable,
             'maxNumberOfFiles' => $this->maxNumberOfFiles,
             'maxFileSize' => $this->maxFileSize,
-            'acceptFileTypes' => function () {
-                if ($this->onlyImage === false) {
-                    return $this->acceptFileTypes;
-                } else {
-                    return new \yii\web\JsExpression('/(\.|\/)(gif|jpe?g|png)$/i');
-                }
-            },
+//            'acceptFileTypes' => function () {
+//                if ($this->onlyImage === false) {
+//                    return $this->acceptFileTypes;
+//                } else {
+//                    return new \yii\web\JsExpression('/(\.|\/)(gif|jpe?g|png)$/i');
+//                }
+//            },
             'files' => $this->value ?: []
         ]);
     }
