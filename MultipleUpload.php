@@ -94,7 +94,8 @@ class MultipleUpload extends InputWidget
 //                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif, image/bmp, application/x-zip-compressed';
             } else {
                 $this->url = $this->multiple ? ['/attachment/upload/images-upload'] : ['/attachment/upload/image-upload'];
-                $this->acceptFileTypes = 'image/*';
+                //$this->acceptFileTypes = 'image/*';
+                $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif';
             }
         }
         if ($this->hasModel()) {
@@ -127,7 +128,13 @@ class MultipleUpload extends InputWidget
             'sortable' => $this->sortable,
             'maxNumberOfFiles' => $this->maxNumberOfFiles,
             'maxFileSize' => $this->maxFileSize,
-            'acceptFileTypes' => $this->acceptFileTypes,
+            'acceptFileTypes' => function () {
+                if ($this->onlyImage === false) {
+                    return $this->acceptFileTypes;
+                } else {
+                    return new \yii\web\JsExpression('/(\.|\/)(gif|jpe?g|png)$/i');
+                }
+            },
             'files' => $this->value ?: []
         ]);
     }
