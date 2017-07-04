@@ -15,6 +15,7 @@ use yii\jui\JuiAsset;
 use yii\base\Arrayable;
 use yii\helpers\ArrayHelper;
 use yii\widgets\InputWidget;
+use yii\web\JsExpression;
 use yuncms\attachment\ModuleTrait;
 
 /**
@@ -102,12 +103,12 @@ class MultipleUpload extends InputWidget
                 $regExp .= 'xyz)$/i';
 
                // $this->acceptFileTypes = 'application/*, text/*';
-                $this->clientOptions['acceptFileTypes'] = new \yii\web\JsExpression($regExp);
+                $this->clientOptions['acceptFileTypes'] = new JsExpression($regExp);
             } else {
                 $this->url = $this->multiple ? ['/attachment/upload/images-upload'] : ['/attachment/upload/image-upload'];
                 //$this->acceptFileTypes = 'image/*';
                 $this->acceptFileTypes = 'image/png, image/jpg, image/jpeg, image/gif';
-                $this->clientOptions['acceptFileTypes'] = new \yii\web\JsExpression('/(\.|\/)(gif|jpe?g|png)$/i');
+                $this->clientOptions['acceptFileTypes'] = new JsExpression('/(\.|\/)(gif|jpe?g|png)$/i');
             }
         }
         if ($this->hasModel()) {
