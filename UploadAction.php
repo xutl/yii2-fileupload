@@ -62,17 +62,38 @@ class UploadAction extends Action
             $this->uploadParam = Yii::$app->request->get($this->uploadQueryParam);
         }
 
-        $this->_config['maxSize'] = $this->getModule()->getMaxUploadByte();
+        $this->_config['maxSize'] = $this->getMaxUploadByte();
         if ($this->multiple) {
             $this->_config['maxFiles'] = (int)(ini_get('max_file_uploads'));
         }
         if ($this->onlyImage !== true) {
-            $this->_config['extensions'] = $this->getModule()->fileAllowFiles;
+            $this->_config['extensions'] = Yii::$app->settings->get('fileAllowFiles', 'attachment');
         } else {
-            $this->_config['extensions'] = $this->getModule()->imageAllowFiles;
+            $this->_config['extensions'] = Yii::$app->settings->get('imageAllowFiles', 'attachment');
             $this->_config['checkExtensionByMimeType'] = true;
             $this->_config['mimeTypes'] = 'image/*';
         }
+    }
+
+    /**
+     * 返回允许上传的最大大小单位 MB
+     * @return int the max upload size in MB
+     */
+    public function getMaxUploadSize()
+    {
+        $maxUpload = (int)(ini_get('upload_max_filesize'));
+        $maxPost = (int)(ini_get('post_max_size'));
+        $memoryLimit = (int)(ini_get('memory_limit'));
+        return min($maxUpload, $maxPost, $memoryLimit);
+    }
+
+    /**
+     * 返回允许上传的最大大小单位 Byte
+     * @return int the max upload size in Byte
+     */
+    public function getMaxUploadByte()
+    {
+        return $this->getMaxUploadSize() * 1024 * 1024;
     }
 
     /**
