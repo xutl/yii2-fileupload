@@ -16,6 +16,7 @@ use yii\base\Arrayable;
 use yii\helpers\ArrayHelper;
 use yii\widgets\InputWidget;
 use yii\web\JsExpression;
+use yuncms\attachment\AttachmentTrait;
 use yuncms\attachment\ModuleTrait;
 
 /**
@@ -24,7 +25,8 @@ use yuncms\attachment\ModuleTrait;
  */
 class MultipleUpload extends InputWidget
 {
-    use ModuleTrait;
+    use AttachmentTrait;
+
     /**
      * @var bool 是否只允许上传图片
      */
@@ -94,7 +96,7 @@ class MultipleUpload extends InputWidget
         if (empty($this->url)) {
             if ($this->onlyImage === false) {
                 $this->url = $this->multiple ? ['/attachment/upload/files-upload'] : ['/attachment/upload/file-upload'];
-                $fileAllowFiles = $this->getModule()->fileAllowFiles;
+                $fileAllowFiles = $this->getSetting('fileAllowFiles');
                 $regExp = '/(\.|\/)(';
                 $extensions = explode(',', $fileAllowFiles);
                 foreach ($extensions as $extension) {

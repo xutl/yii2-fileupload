@@ -9,15 +9,12 @@ namespace xutl\fileupload;
 
 use Yii;
 use yii\base\Action;
-use yii\base\DynamicModel;
-use yii\base\Exception;
-use yii\helpers\FileHelper;
-use yii\helpers\Url;
-use yii\web\BadRequestHttpException;
 use yii\helpers\Html;
 use yii\web\Response;
+use yii\base\Exception;
 use yii\web\UploadedFile;
-use yuncms\attachment\ModuleTrait;
+use yii\web\BadRequestHttpException;
+use yuncms\attachment\AttachmentTrait;
 use yuncms\attachment\components\Uploader;
 
 /**
@@ -26,7 +23,7 @@ use yuncms\attachment\components\Uploader;
  */
 class UploadAction extends Action
 {
-    use ModuleTrait;
+    use AttachmentTrait;
 
     /**
      * @var string file input name.
@@ -67,33 +64,12 @@ class UploadAction extends Action
             $this->_config['maxFiles'] = (int)(ini_get('max_file_uploads'));
         }
         if ($this->onlyImage !== true) {
-            $this->_config['extensions'] = Yii::$app->settings->get('fileAllowFiles', 'attachment');
+            $this->_config['extensions'] = $this->getSetting('fileAllowFiles');
         } else {
-            $this->_config['extensions'] = Yii::$app->settings->get('imageAllowFiles', 'attachment');
+            $this->_config['extensions'] = $this->getSetting('imageAllowFiles');
             $this->_config['checkExtensionByMimeType'] = true;
             $this->_config['mimeTypes'] = 'image/*';
         }
-    }
-
-    /**
-     * 返回允许上传的最大大小单位 MB
-     * @return int the max upload size in MB
-     */
-    public function getMaxUploadSize()
-    {
-        $maxUpload = (int)(ini_get('upload_max_filesize'));
-        $maxPost = (int)(ini_get('post_max_size'));
-        $memoryLimit = (int)(ini_get('memory_limit'));
-        return min($maxUpload, $maxPost, $memoryLimit);
-    }
-
-    /**
-     * 返回允许上传的最大大小单位 Byte
-     * @return int the max upload size in Byte
-     */
-    public function getMaxUploadByte()
-    {
-        return $this->getMaxUploadSize() * 1024 * 1024;
     }
 
     /**
